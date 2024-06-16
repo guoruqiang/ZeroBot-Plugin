@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	baseURL  = "https://api.nwafu-ai.me/v1/"
-	// proxyURL           = "https://open.aiproxy.xyz/v1/"
+	// baseURL  = "https://api.712100.me/v1/"
+	proxyURL           = "https://api.nwafu-ai.me/v1/"
 	modelGPT3Dot5Turbo = "gpt-3.5-turbo"
 	yunKey             = "7d06a110e9e20a684e02934549db1d3d"
 	yunURL             = "https://api.a20safe.com/api.php?api=35&key=%s&apikey=%s"

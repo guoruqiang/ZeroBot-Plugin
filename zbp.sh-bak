@@ -1,0 +1,59 @@
+#!/bin/bash
+
+PROCESS_PATTERN="/tmp/go-build"  # 匹配进程路径的模式
+SCRIPT_NAME="main"  # 可执行文件名
+PIDFILE="/tmp/zerobot.pid"  # PID 文件位置
+LOGFILE="/root/chatqq/logfile.log"  # 日志文件位置
+DAEMON_STOP_FLAG="/root/chatqq/zerobot-stop.flag"  # 守护进程停止标志文件
+
+# 检查是否有符合模式的进程正在运行
+if pgrep -f $PROCESS_PATTERN > /dev/null; then
+    echo "检测到符合模式的进程已经在运行。"
+    # 提示用户是否停止正在运行的实例
+    read -p "是否需要停止正在运行的实例？(回答yes/y将停止实例，回答no/n将退出脚本): " answer
+    case "$answer" in
+        yes|y)
+            # 杀死所有符合模式的实例
+            pkill -f $PROCESS_PATTERN
+            # 删除守护进程停止标志文件以允许守护进程退出
+            rm -f $DAEMON_STOP_FLAG
+            echo "已停止正在运行的实例。"
+            exit 0
+            ;;
+        no|n)
+            echo "脚本终止。"
+            exit 1
+            ;;
+        *)
+            echo "无效的输入。脚本终止。"
+            exit 1
+            ;;
+    esac
+else
+    echo "没有检测到符合模式的进程，将自动启动程序。"
+fi
+
+# 创建守护进程停止标志文件
+touch $DAEMON_STOP_FLAG
+
+# 守护循环
+while [ -f $DAEMON_STOP_FLAG ]; do
+    # 检查程序是否在运行
+    if ! pgrep -f $PROCESS_PATTERN > /dev/null; then
+        echo "程序未运行，正在启动..."
+
+        # 在这里执行启动程序的命令
+        nohup go run $SCRIPT_NAME.go > $LOGFILE 2>&1 & echo $! > $PIDFILE
+
+        if [ $? -eq 0 ]; then
+            echo "程序已在后台启动。日志文件位于 $LOGFILE"
+        else
+            echo "程序启动失败，请检查脚本和代码。"
+            exit 1
+        fi
+    fi
+    # 每隔一段时间检查一次
+    sleep 300
+done
+
+echo "守护进程已停止。"
